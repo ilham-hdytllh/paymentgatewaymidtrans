@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read: if true; 
+      allow write: if true;
+    }
+    
+    //note
+    // path=** for collectionGroup
+    function alamat(){ 
+    	return (get(/databases/$(database)/documents/users/$(request.auth.uid)))
+      // return (get(request.resource.data.userID))
+    }
+    
+    function isAdmin(){
+    	return (alamat().data.role == "superadmin") || (alamat().data.role == "leader" || (alamat().data.role == "manajer"))
+    }
+    
+    function isHaveRole(){
+    	return (alamat().data.role == "superadmin") || (alamat().data.role == "leader") || (alamat().data.role == "kitchen") || (alamat().data.role == "manajer" || (alamat().data.role == "kasir"))
+    }
+    
+    function isKasir() {
+    	return (alamat().data.role == "kasir")
+    }
+
+    match /users/{userID}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow create: if request.auth != null && isAdmin();
+      allow update: if request.auth != null && request.auth.uid == userID && isHaveRole() || request.auth != null && isAdmin();
+      allow delete: if request.auth != null && request.auth.uid == userID && isHaveRole() || request.auth != null && isAdmin();
+    }
+  	
+    match /banners/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isAdmin();
+    }
+    
+    match /categorys/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isKasir() || request.auth != null && isAdmin();
+    }
+    
+    match /customers/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isKasir() || request.auth != null && isAdmin();
+    }
+    
+    match /{path=**}/history/{history}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isKasir() || request.auth != null && isAdmin();
+    }
+    
+    match /log/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isAdmin();
+    }
+    
+    match /{path=**}/menu/{menu}{
+    	allow read: if request.auth != null && isHaveRole() ;
+      allow write: if request.auth != null && isKasir() || request.auth != null && isAdmin();
+    }
+    
+    match /subcategorys/{document=**} {
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isKasir() || request.auth != null && isAdmin();
+    }
+    
+    match /orders/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if request.auth != null && isKasir() || request.auth != null && isAdmin();
+    }
+    
+    match /role/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+      allow write: if true;
+    }
+    
+    match /subcategorys/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+    	allow create: if request.auth != null && isAdmin();
+    }
+    
+    match /tables/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+    	allow write: if request.auth != null && isAdmin();
+    }
+    
+    match /cartspos/{document=**}{
+    	allow read: if request.auth != null && isHaveRole();
+    	allow write: if request.auth != null && isAdmin();
+    }
+  }
+}
